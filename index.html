@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Aisha's To-Do List</h1>
+    <div class="input-section">
+      <input type="text" id="taskInput" placeholder="Введите задачу">
+      <button id="addTaskBtn">Добавить</button>
+    </div>
+    <div class="filter-section">
+      <button id="filterAll" class="filter-btn active">Все</button>
+      <button id="filterCompleted" class="filter-btn">Выполненные</button>
+      <button id="filterUncompleted" class="filter-btn">Невыполненные</button>
+    </div>
+    <ul id="taskList"></ul>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const taskInput = document.getElementById('taskInput');
+      const addTaskBtn = document.getElementById('addTaskBtn');
+      const taskList = document.getElementById('taskList');
+      const filterButtons = document.querySelectorAll('.filter-btn');
+
+      let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+      const renderTasks = (filter = 'all') => {
+        taskList.innerHTML = '';
+        tasks.filter(task => {
+          if (filter === 'completed') return task.completed;
+          if (filter === 'uncompleted') return !task.completed;
+          return true;
+        }).forEach(task => {
+          const li = document.createElement('li');
+          li.className = task.completed ? 'completed' : '';
+          li.innerHTML = `
+            ${task.text}
+            <button class="remove-btn" data-id="${task.id}">Удалить</button>
+            <button class="toggle-btn" data-id="${task.id}">${task.completed ? 'Не выполнено' : 'Выполнено'}</button>
+          `;
+          taskList.appendChild(li);
+        });
+
+        document.querySelectorAll('.remove-btn').forEach(button => {
+          button.addEventListener('click', () => {
+            removeTask(button.getAttribute('data-id'));
+          });
+        });
+
+        document.querySelectorAll('.toggle-btn').forEach(button => {
+          button.addEventListener('click', () => {
+            toggleTask(button.getAttribute('data-id'));
+          });
+        });
+      };
+
+      const addTask = () => {
+        const taskText = taskInput.value.trim();
+        if (taskText) {
+          const task = { id: Date.now(), text: taskText, completed: false };
+          tasks.push(task);
+          localStorage.setItem('tasks', JSON.stringify(tasks));
+          renderTasks();
+          taskInput.value = '';
+        }
+      };
+
+      const removeTask = id => {
+        tasks = tasks.filter(task => task.id != id);
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        renderTasks();
+      };
+
+      const toggleTask = id => {
+        tasks = tasks.map(task => task.id == id ? { ...task, completed: !task.completed } : task);
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        renderTasks();
+      };
+
+      addTaskBtn.addEventListener('click', addTask);
+      taskInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') addTask();
+      });
+
+      filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          document.querySelector('.filter-btn.active').classList.remove('active');
+          button.classList.add('active');
+          renderTasks(button.id.replace('filter', '').toLowerCase());
+        });
+      });
+
+      renderTasks();
+    });
+  </script>
+</body>
+</html>
